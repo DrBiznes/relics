@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -87,8 +88,15 @@ public class EntityGlitchMask {
             renderedThisFrame = true;
 
             if (!entity.isSpectator()) {
-                for (var layer : layers)
+                for (var layer : layers) {
+                    // Skip the held-item layer: Sodium/Iris wrap ItemRenderer with buffer-state
+                    // tracking that isn't safe to re-enter here, causing "Not building!" crashes
+                    // during shadow passes. The mask only needs the body/armor silhouette anyway.
+                    if (layer instanceof ItemInHandLayer)
+                        continue;
+
                     layer.render(poseStack, buffer, packedLight, entity, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch);
+                }
             }
 
             buffer.endBatch();
